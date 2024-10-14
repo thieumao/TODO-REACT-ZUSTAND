@@ -1,26 +1,95 @@
-import React from 'react';
-import logo from './logo.svg';
+import { useState } from 'react';
 import './App.css';
+import { TodoItem, useStore, ViewType } from './store';
 
-function App() {
+export default function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <h1>TODO LIST</h1>
+      <TodoList />
     </div>
   );
 }
 
-export default App;
+const TodoList = () => {
+  const [newItem, setNewItem] = useState('');
+  const { view, setView, addItem, clearCompleted, items } = useStore();
+
+  const addTodoItem = () => {
+    addItem({ id: Date.now(), title: newItem, done: false });
+    setNewItem('');
+    setView(ViewType.ALL);
+  }
+
+  const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      addTodoItem();
+    }
+  }
+
+  return (
+    <div>
+      <div>
+        <input 
+          type="text" 
+          placeholder="What needs to be done?" 
+          value={newItem}
+          onInput={(e) => setNewItem(e.currentTarget.value)}
+          onKeyDown={onKeyDown}
+        />
+        <button onClick={clearCompleted} disabled={!items.some((it) => it.done)}>
+          Clear completed
+        </button>
+        <div>
+          <button type='button' onClick={() => setView(ViewType.ALL)} className={view === ViewType.ALL ? 'selected' : ''}>
+            All
+          </button>
+          <button type='button' onClick={() => setView(ViewType.ACTIVE)} className={view === ViewType.ACTIVE ? 'selected' : ''}>
+            Active
+          </button>
+          <button type='button' onClick={() => setView(ViewType.COMPLETED)} className={view === ViewType.COMPLETED ? 'selected' : ''}>
+            Completed
+          </button>
+        </div>
+      </div>
+      <List />
+    </div>
+  );
+}
+
+const List = () => {
+  const { view, items } = useStore();
+  let visibleItems = [...items];
+  if (view === ViewType.COMPLETED) {
+    visibleItems = visibleItems.filter((li) => li.done);
+  } else if (view === ViewType.ACTIVE) {
+    visibleItems = visibleItems.filter((li) => !li.done);
+  }
+  return (
+    <ul>
+      <div className='number'>{`${visibleItems.length} ${visibleItems.length === 1 ? 'item' : 'items'}`}</div>
+      {visibleItems
+        .map((li) => (
+          <ListItem item={li} key={li.id} />
+        ))}
+    </ul>
+  );
+}
+
+const ListItem = ({ item }: { item: TodoItem }) => {
+  const { toggleItem, removeItem } = useStore();
+  return (
+    <li className='item'  onClick={() => toggleItem(item)}>
+      <input 
+        type='checkbox' 
+        checked={item.done} 
+      /> 
+      <div className={`title ${item.done ? 'done' : ''}`}>
+        {item.title}
+      </div>
+      <button onClick={() => removeItem(item)} className='delete'>
+        Delete
+      </button>
+    </li>
+  );
+}
