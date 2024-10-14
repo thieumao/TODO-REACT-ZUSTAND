@@ -16,6 +16,10 @@ const TodoList = () => {
   const { view, setView, addItem, clearCompleted, items } = useStore();
 
   const addTodoItem = () => {
+    if (!newItem.trim()) {
+      setNewItem('');
+      return;
+    }
     addItem({ id: Date.now(), title: newItem, done: false });
     setNewItem('');
     setView(ViewType.ALL);
